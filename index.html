@@ -1,1 +1,1984 @@
+<!-- FIREBASE SETUP SCREEN -->
+        <div id="setupScreen" class="setup-screen">
+            <h1>🔥 Firebase Setup</h1>
+            <p><strong>PRESENCE - Smart Attendance System</strong></p>
+            <p>Enter your Firebase configuration to enable cloud sync</p>
+            
+            <div style="text-align: left; margin: 20px 0;">
+                <label style="font-weight: 700; display: block; margin-bottom: 5px;">API Key:</label>
+                <input type="text" id="apiKey" placeholder="AIza..." />
+                
+                <label style="font-weight: 700; display: block; margin-bottom: 5px;">Project ID:</label>
+                <input type="text" id="projectId" placeholder="your-project-id" />
+                
+                <label style="font-weight: 700; display: block; margin-bottom: 5px;">Database URL:</label>
+                <input type="text" id="databaseURL" placeholder="https://your-project.firebaseio.com" />
+            </div>
+            
+            <button onclick="saveFirebaseConfig()">💾 Save & Connect</button>
+        </div>
 
+        <!-- INITIAL SCAN SCREEN - Determines User Type -->
+        <div id="initialScanScreen" class="initial-scan-screen hidden">
+            <h1>👋 Welcome to PRESENCE</h1>
+            <p style="margin: 20px 0; color: #666; font-size: 16px;">
+                Please scan your QR code to continue
+            </p>
+            <div id="initialReader" style="margin: 20px 0;"></div>
+            <div class="status-display info">
+                <h3>Scan Your QR Code</h3>
+                <p>The app will automatically detect if you're a student or teacher/admin</p>
+            </div>
+        </div>
+
+        <!-- MAIN APP -->
+        <div id="mainApp" class="hidden">
+            <div class="main-card">
+                <div class="header">
+                    <h1>🎓 PRESENCE</h1>
+                    <p>Aringay National High School</p>
+                    <span class="cloud-badge">☁️ Cloud Sync Active</span>
+                    <p style="margin-top: 10px; font-size: 12px;" id="userInfo"></p>
+                </div>
+
+                <div class="tab-navigation" id="tabNavigation">
+                    <!-- Tabs will be dynamically added based on user type -->
+                </div>
+
+                <!-- SCAN TAB -->
+                <div id="scanTab" class="tab-content active">
+                    <div class="mode-toggle">
+                        <button class="mode-btn time-in active" onclick="setMode('IN')">⏰ TIME IN</button>
+                        <button class="mode-btn time-out" onclick="setMode('OUT')">🏃 TIME OUT</button>
+                    </div>
+
+                    <div class="scanner-container">
+                        <div id="reader"></div>
+                        <div id="statusDisplay" class="status-display info">
+                            <h3>Ready to Scan</h3>
+                            <p>Point camera at QR code</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STUDENTS TAB (Admin Only) -->
+                <div id="studentsTab" class="tab-content">
+                    <div class="logs-section">
+                        <div class="date-selector">
+                            <input type="date" id="studentDateFilter" />
+                            <select id="studentFilterType" onchange="filterStudentLogs()">
+                                <option value="all">All Students</option>
+                                <option value="on-time">On Time</option>
+                                <option value="late">Late</option>
+                                <option value="complete">Complete</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                            <button onclick="filterStudentLogs()">Filter</button>
+                            <button onclick="showTodayStudents()">Today</button>
+                        </div>
+
+                        <h2 style="margin-bottom: 15px; font-family: var(--heading-font); color: var(--primary-color);">👥 Student Attendance</h2>
+
+                        <div class="stats">
+                            <div class="stat-box">
+                                <div class="stat-number" id="studentTotal">0</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="studentOnTime">0</div>
+                                <div class="stat-label">On Time</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="studentLate">0</div>
+                                <div class="stat-label">Late</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="studentComplete">0</div>
+                                <div class="stat-label">Complete</div>
+                            </div>
+                        </div>
+
+                        <div id="studentLogsDisplay"></div>
+
+                        <div class="action-buttons">
+                            <button class="action-btn export-btn" onclick="exportStudentCSV()">📥 Export CSV</button>
+                            <button class="action-btn clear-btn" onclick="clearStudentLogs()">🗑️ Clear All</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TEACHERS TAB (Admin Only) -->
+                <div id="teachersTab" class="tab-content">
+                    <div class="logs-section">
+                        <div class="date-selector">
+                            <input type="date" id="teacherDateFilter" />
+                            <select id="teacherFilterType" onchange="filterTeacherLogs()">
+                                <option value="all">All Teachers</option>
+                                <option value="complete">Complete</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                            <button onclick="filterTeacherLogs()">Filter</button>
+                            <button onclick="showTodayTeachers()">Today</button>
+                        </div>
+
+                        <h2 style="margin-bottom: 15px; font-family: var(--heading-font); color: var(--primary-color);">👨‍🏫 Teacher Attendance</h2>
+
+                        <div class="stats">
+                            <div class="stat-box">
+                                <div class="stat-number" id="teacherTotal">0</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="teacherPresent">0</div>
+                                <div class="stat-label">Present</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="teacherComplete">0</div>
+                                <div class="stat-label">Complete</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="teacherPending">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+
+                        <div id="teacherLogsDisplay"></div>
+
+                        <div class="action-buttons">
+                            <button class="action-btn export-btn" onclick="exportTeacherCSV()">📥 Export CSV</button>
+                            <button class="action-btn clear-btn" onclick="clearTeacherLogs()">🗑️ Clear All</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MY LOGS TAB (Student Only) -->
+                <div id="myLogsTab" class="tab-content">
+                    <div class="logs-section">
+                        <div class="date-selector">
+                            <input type="date" id="myLogsDateFilter" />
+                            <button onclick="filterMyLogs()">Filter</button>
+                            <button onclick="showTodayLogs()">Today</button>
+                            <button onclick="showAllLogs()">All</button>
+                        </div>
+
+                        <h2 style="margin-bottom: 15px; font-family: var(--heading-font); color: var(--primary-color);">📋 My Attendance</h2>
+
+                        <div class="stats" style="grid-template-columns: repeat(3, 1fr);">
+                            <div class="stat-box">
+                                <div class="stat-number" id="myTotalDays">0</div>
+                                <div class="stat-label">Days</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="myOnTime">0</div>
+                                <div class="stat-label">On Time</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="myComplete">0</div>
+                                <div class="stat-label">Complete</div>
+                            </div>
+                        </div>
+
+                        <div id="myLogsDisplay"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL VARIABLES
+        let currentMode = 'IN';
+        let currentTab = 'scan';
+        let html5QrCode;
+        let initialScanner;
+        let isScanning = false;
+        let database;
+        let studentLogs = [];
+        let teacherLogs = [];
+        let userType = null; // 'admin' or 'student'
+        let userLRN = null;
+        let userName = null;
+        
+        const SCHOOL_LOCATION = {
+            latitude: 16.393690617238885,
+            longitude: 120.36015818769877,
+            radius: 100
+        };
+        
+        let userLocation = null;
+        let isWithinSchoolBounds = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCustomTheme();
+            checkFirebaseConfig();
+        });
+
+        // ==================== FIREBASE SETUP ====================
+        
+        function checkFirebaseConfig() {
+            const config = localStorage.getItem('firebaseConfig');
+            
+            if (config) {
+                const parsedConfig = JSON.parse(config);
+                initializeFirebase(parsedConfig);
+            } else {
+                document.getElementById('setupScreen').classList.remove('hidden');
+            }
+        }
+
+        function saveFirebaseConfig() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const projectId = document.getElementById('projectId').value.trim();
+            const databaseURL = document.getElementById('databaseURL').value.trim();
+            
+            if (!apiKey || !projectId || !databaseURL) {
+                alert('❌ Please fill in all Firebase configuration fields');
+                return;
+            }
+            
+            const config = {
+                apiKey: apiKey,
+                authDomain: projectId + '.firebaseapp.com',
+                databaseURL: databaseURL,
+                projectId: projectId,
+                storageBucket: projectId + '.appspot.com'
+            };
+            
+            localStorage.setItem('firebaseConfig', JSON.stringify(config));
+            initializeFirebase(config);
+        }
+
+        function initializeFirebase(config) {
+            try {
+                firebase.initializeApp(config);
+                database = firebase.database();
+                
+                document.getElementById('firebaseStatus').textContent = '🟢 Connected';
+                document.getElementById('firebaseStatus').className = 'firebase-status connected';
+                document.getElementById('setupScreen').classList.add('hidden');
+                
+                // Check if user already logged in
+                const savedUserType = localStorage.getItem('userType');
+                const savedUserName = localStorage.getItem('userName');
+                const savedUserLRN = localStorage.getItem('userLRN');
+                
+                if (savedUserType && savedUserName) {
+                    userType = savedUserType;
+                    userName = savedUserName;
+                    userLRN = savedUserLRN;
+                    setupRealtimeListeners();
+                    showMainApp();
+                } else {
+                    showInitialScan();
+                }
+                
+            } catch (error) {
+                document.getElementById('firebaseStatus').textContent = '🔴 Connection Failed';
+                document.getElementById('firebaseStatus').className = 'firebase-status disconnected';
+                alert('❌ Firebase connection failed: ' + error.message);
+            }
+        }
+
+        function setupRealtimeListeners() {
+            database.ref('attendance/students').on('value', (snapshot) => {
+                const data = snapshot.val();
+                studentLogs = data ? Object.values(data) : [];
+                studentLogs.sort((a, b) => b.timestamp - a.timestamp);
+                
+                if (currentTab === 'students') {
+                    filterStudentLogs();
+                } else if (currentTab === 'myLogs' && userType === 'student') {
+                    filterMyLogs();
+                }
+            });
+            
+            database.ref('attendance/teachers').on('value', (snapshot) => {
+                const data = snapshot.val();
+                teacherLogs = data ? Object.values(data) : [];
+                teacherLogs.sort((a, b) => b.timestamp - a.timestamp);
+                
+                if (currentTab === 'teachers') {
+                    filterTeacherLogs();
+                }
+            });
+        }
+
+        // ==================== INITIAL SCAN (USER TYPE DETECTION) ====================
+        
+        function showInitialScan() {
+            document.getElementById('initialScanScreen').classList.remove('hidden');
+            
+            setTimeout(() => {
+                initialScanner = new Html5Qrcode("initialReader");
+                initialScanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    onInitialScanSuccess,
+                    () => {}
+                ).catch(err => {
+                    alert('Camera error: ' + err);
+                });
+            }, 500);
+        }
+
+        function onInitialScanSuccess(decodedText) {
+            const parts = decodedText.split('|');
+            
+            if (parts.length < 2) {
+                alert('❌ Invalid QR code format');
+                return;
+            }
+
+            const type = parts[0].toUpperCase();
+            
+            if (type === 'TEACHER') {
+                // Teacher/Admin detected
+                userType = 'admin';
+                userName = parts[1];
+                userLRN = null;
+                
+                localStorage.setItem('userType', 'admin');
+                localStorage.setItem('userName', userName);
+                
+                initialScanner.stop();
+                document.getElementById('initialScanScreen').classList.add('hidden');
+                
+                setupRealtimeListeners();
+                showMainApp();
+                
+            } else {
+                // Student detected
+                if (parts.length < 3) {
+                    alert('❌ Invalid student QR code');
+                    return;
+                }
+                
+                userType = 'student';
+                userName = parts[0];
+                userLRN = parts[1];
+                
+                localStorage.setItem('userType', 'student');
+                localStorage.setItem('userName', userName);
+                localStorage.setItem('userLRN', userLRN);
+                
+                initialScanner.stop();
+                document.getElementById('initialScanScreen').classList.add('hidden');
+                
+                setupRealtimeListeners();
+                showMainApp();
+            }
+        }
+
+        // ==================== MAIN APP ====================
+        
+        function showMainApp() {
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            // Update user badge
+            const userBadge = document.getElementById('userBadge');
+            userBadge.classList.remove('hidden');
+            if (userType === 'admin') {
+                userBadge.textContent = '👨‍🏫 ADMIN';
+                userBadge.className = 'user-badge admin';
+            } else {
+                userBadge.textContent = '👤 STUDENT';
+                userBadge.className = 'user-badge student';
+            }
+            
+            // Update user info
+            document.getElementById('userInfo').textContent = 
+                userType === 'admin' ? `Admin: ${userName}` : `Student: ${userName} (LRN: ${userLRN})`;
+            
+            // Setup tabs based on user type
+            setupTabs();
+            
+            // Initialize
+            checkLocation();
+            initScanner();
+            setTodayDate();
+        }
+
+        function setupTabs() {
+            const tabNav = document.getElementById('tabNavigation');
+            
+            if (userType === 'admin') {
+                tabNav.innerHTML = `
+                    <button class="tab-btn active" onclick="switchTab('scan')">📷 Scan</button>
+                    <button class="tab-btn" onclick="switchTab('students')">👥 Students</button>
+                    <button class="tab-btn" onclick="switchTab('teachers')">👨‍🏫 Teachers</button>
+                `;
+            } else {
+                tabNav.innerHTML = `
+                    <button class="tab-btn active" onclick="switchTab('scan')">📷 Scan</button>
+                    <button class="tab-btn" onclick="switchTab('myLogs')">📋 My Logs</button>
+                `;
+            }
+        }
+
+        function setTodayDate() {
+            const today = new Date().toISOString().split('T')[0];
+            if (document.getElementById('studentDateFilter')) {
+                document.getElementById('studentDateFilter').value = today;
+            }
+            if (document.getElementById('teacherDateFilter')) {
+                document.getElementById('teacherDateFilter').value = today;
+            }
+            if (document.getElementById('myLogsDateFilter')) {
+                document.getElementById('myLogsDateFilter').value = today;
+            }
+        }
+
+        // ==================== LOCATION & SCANNER ====================
+        
+        function checkLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        userLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        };
+                        
+                        const distance = calculateDistance(
+                            userLocation.latitude,
+                            userLocation.longitude,
+                            SCHOOL_LOCATION.latitude,
+                            SCHOOL_LOCATION.longitude
+                        );
+                        
+                        isWithinSchoolBounds = distance <= SCHOOL_LOCATION.radius;
+                        
+                        if (isWithinSchoolBounds) {
+                            showStatus('success', '✅ Location Verified', 
+                                'Within school premises (' + Math.round(distance) + 'm)');
+                        } else {
+                            showStatus('error', '🚫 Outside School', 
+                                'Currently ' + Math.round(distance) + 'm away');
+                        }
+                    },
+                    function(error) {
+                        showStatus('warning', '⚠️ Location Required', 
+                            'Enable location services');
+                    }
+                );
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function initScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess,
+                () => {}
+            ).catch(err => {
+                showStatus('error', 'Camera Error', 'Allow camera permissions');
+            });
+        }
+
+        function onScanSuccess(decodedText) {
+            if (!isScanning) {
+                isScanning = true;
+                processQRCode(decodedText);
+                setTimeout(() => { isScanning = false; }, 3000);
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            if (tab === 'students') showTodayStudents();
+            if (tab === 'teachers') showTodayTeachers();
+            if (tab === 'myLogs') {
+                showTodayLogs();
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.mode-btn.' + (mode === 'IN' ? 'time-in' : 'time-out')).classList.add('active');
+            showStatus('info', 'Mode Changed', 'Now in ' + mode + ' mode');
+        }
+
+        // ==================== QR CODE PROCESSING ====================
+        
+        function processQRCode(qrData) {
+            if (!isWithinSchoolBounds) {
+                showStatus('error', '🚫 Access Denied', 'Must be at school premises');
+                return;
+            }
+            
+            const parts = qrData.split('|');
+            
+            if (parts.length < 2) {
+                showStatus('error', 'Invalid QR Code', 'Format error');
+                return;
+            }
+
+            const type = parts[0].toUpperCase();
+            
+            if (type === 'TEACHER') {
+                if (userType === 'student') {
+                    showStatus('error', '❌ Invalid', 'Students cannot scan teacher QR codes');
+                    return;
+                }
+                processTeacherQR(parts);
+            } else {
+                processStudentQR(parts);
+            }
+        }
+
+        function processStudentQR(parts) {
+            const [name, lrn, dob] = parts;
+            
+            if (!name || lrn.length !== 12) {
+                showStatus('error', 'Invalid Data', 'Check QR code format');
+                return;
+            }
+
+            // Student can only scan their own QR
+            if (userType === 'student' && lrn !== userLRN) {
+                showStatus('error', '❌ Wrong QR Code', 'You can only scan your own QR code!');
+                return;
+            }
+
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const time = now.toLocaleTimeString('en-US', { hour12: true });
+
+            const existingLog = studentLogs.find(log => 
+                log.lrn === lrn && log.date === date
+            );
+
+            if (currentMode === 'IN') {
+                if (existingLog && existingLog.timeIn) {
+                    showStatus('error', 'Already Timed In', name + ' already recorded');
+                    return;
+                }
+
+                const remarks = calculateRemarks(now);
+                
+                const newLog = {
+                    id: 'student_' + lrn + '_' + date,
+                    name,
+                    lrn,
+                    dob,
+                    date,
+                    timeIn: time,
+                    timeOut: '',
+                    remarks,
+                    status: 'Pending',
+                    timestamp: Date.now()
+                };
+
+                database.ref('attendance/students/' + newLog.id).set(newLog);
+                showStatus('success', '✅ Time In Recorded', name + ' - ' + remarks);
+                
+            } else {
+                if (!existingLog || !existingLog.timeIn) {
+                    showStatus('error', 'No Time In', name + ' must time in first');
+                    return;
+                }
+
+                if (existingLog.timeOut) {
+                    showStatus('error', 'Already Timed Out', name + ' completed');
+                    return;
+                }
+
+                const updatedLog = {
+                    ...existingLog,
+                    timeOut: time,
+                    status: calculateFinalStatus(existingLog.timeIn, time, existingLog.remarks)
+                };
+                
+                database.ref('attendance/students/' + existingLog.id).set(updatedLog);
+                showStatus('success', '✅ Time Out Complete', name + ' - ' + updatedLog.status);
+            }
+        }
+
+        function processTeacherQR(parts) {
+            const [type, name, subject] = parts;
+            
+            if (!name) {
+                showStatus('error', 'Invalid Teacher QR', 'Check format');
+                return;
+            }
+
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const time = now.toLocaleTimeString('en-US', { hour12: true });
+
+            const existingLog = teacherLogs.find(log => 
+                log.name === name && log.date === date
+            );
+
+            if (currentMode === 'IN') {
+                if (existingLog && existingLog.timeIn) {
+                    showStatus('error', 'Already Logged', name + ' already timed in');
+                    return;
+                }
+
+                const newLog = {
+                    id: 'teacher_' + name.replace(/\s/g, '_') + '_' + date,
+                    name,
+                    subject: subject || 'N/A',
+                    date,
+                    timeIn: time,
+                    timeOut: '',
+                    timestamp: Date.now()
+                };
+
+                database.ref('attendance/teachers/' + newLog.id).set(newLog);
+                showStatus('success', '✅ Teacher Time In', name + ' - ' + time);
+                
+            } else {
+                if (!existingLog || !existingLog.timeIn) {
+                    showStatus('error', 'No Time In', name + ' needs to time in first');
+                    return;
+                }
+
+                if (existingLog.timeOut) {
+                    showStatus('error', 'Already Timed Out', name + ' completed');
+                    return;
+                }
+
+                const updatedLog = {
+                    ...existingLog,
+                    timeOut: time
+                };
+                
+                database.ref('attendance/teachers/' + existingLog.id).set(updatedLog);
+                showStatus('success', '✅ Teacher Time Out', name + ' - ' + time);
+            }
+        }
+
+        function calculateRemarks(time) {
+            const hour = time.getHours();
+            const minute = time.getMinutes();
+            const timeInMinutes = hour * 60 + minute;
+            
+            if (timeInMinutes <= 450) return "On Time";
+            if (timeInMinutes > 450 && timeInMinutes < 720) return "Late";
+            if (timeInMinutes >= 720 && timeInMinutes <= 780) return "Present (Half Day - Afternoon)";
+            return "Late";
+        }
+
+        function calculateFinalStatus(timeInStr, timeOutStr, remarks) {
+            const timeOutParts = parseTime(timeOutStr);
+            const timeOutInMinutes = timeOutParts.hour * 60 + timeOutParts.minute;
+            
+            if (remarks.indexOf("Half Day - Afternoon") >= 0) {
+                if (timeOutInMinutes >= 960) {
+                    return "Present (Half Day)";
+                } else {
+                    return "Present (Half Day - Early Dismissal)";
+                }
+            }
+            
+            if (timeOutInMinutes >= 720 && timeOutInMinutes < 780) {
+                return "Present (Half Day)";
+            } else if (timeOutInMinutes >= 960) {
+                if (remarks === "On Time") {
+                    return "Present (Whole Day)";
+                } else if (remarks === "Late") {
+                    return "Present (Whole Day - Late)";
+                } else {
+                    return "Present (Whole Day)";
+                }
+            } else {
+                return "Present (Half Day)";
+            }
+        }
+
+        function parseTime(timeString) {
+            timeString = timeString.toString().trim();
+            
+            let hour = 0;
+            let minute = 0;
+            const isPM = timeString.toUpperCase().indexOf("PM") >= 0;
+            const isAM = timeString.toUpperCase().indexOf("AM") >= 0;
+            
+            timeString = timeString.replace(/AM|PM/gi, "").trim();
+            const parts = timeString.split(":");
+            hour = parseInt(parts[0]);
+            minute = parseInt(parts[1] || 0);
+            
+            if (isPM && hour != 12) {
+                hour += 12;
+            } else if (isAM && hour == 12) {
+                hour = 0;
+            }
+            
+            return { hour, minute };
+        }
+
+        function showStatus(type, title, message) {
+            const status = document.getElementById('statusDisplay');
+            status.className = 'status-display ' + type;
+            status.innerHTML = '<h3>' + title + '</h3><p>' + message + '</p>';
+        }
+
+        // ==================== ADMIN - STUDENT LOGS ====================
+        
+        function showTodayStudents() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('studentDateFilter').value = today;
+            document.getElementById('studentFilterType').value = 'all';
+            filterStudentLogs();
+        }
+
+        function filterStudentLogs() {
+            const selectedDate = document.getElementById('studentDateFilter').value;
+            const filterType = document.getElementById('studentFilterType').value;
+            
+            let filtered = studentLogs.filter(log => log.date === selectedDate);
+            
+            if (filterType === 'on-time') {
+                filtered = filtered.filter(log => log.remarks === "On Time");
+            } else if (filterType === 'late') {
+                filtered = filtered.filter(log => log.remarks === "Late" || log.remarks.includes("Late"));
+            } else if (filterType === 'complete') {
+                filtered = filtered.filter(log => log.timeOut);
+            } else if (filterType === 'pending') {
+                filtered = filtered.filter(log => !log.timeOut);
+            }
+            
+            displayStudentLogs(filtered, selectedDate);
+        }
+
+        function displayStudentLogs(logs, date) {
+            const container = document.getElementById('studentLogsDisplay');
+            const allLogsToday = studentLogs.filter(log => log.date === date);
+            
+            const total = allLogsToday.length;
+            const onTime = allLogsToday.filter(log => log.remarks === "On Time").length;
+            const late = allLogsToday.filter(log => log.remarks === "Late" || log.remarks.includes("Late")).length;
+            const complete = allLogsToday.filter(log => log.timeOut).length;
+            
+            document.getElementById('studentTotal').textContent = total;
+            document.getElementById('studentOnTime').textContent = onTime;
+            document.getElementById('studentLate').textContent = late;
+            document.getElementById('studentComplete').textContent = complete;
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="no-logs">No student attendance records match the filter</div>';
+                return;
+            }
+            
+            container.innerHTML = logs.map(log => {
+                const statusClass = log.timeOut ? 'complete' : 'pending';
+                const remarksClass = log.remarks === "On Time" ? 'on-time' : 
+                                    log.remarks.includes("Late") ? 'late' : 'half-day';
+                const statusBadgeClass = log.status.includes("Whole Day") ? 'whole-day' : 'half-day';
+                
+                return `
+                    <div class="log-item ${statusClass}">
+                        <div class="log-name">${log.name}</div>
+                        <div style="font-size: 12px; color: #666; margin: 5px 0;">
+                            <span>LRN: ${log.lrn}</span>
+                        </div>
+                        <div style="font-size: 13px; color: #555; margin-top: 8px;">
+                            ⏰ In: ${log.timeIn} 
+                            ${log.timeOut ? '| 🏃 Out: ' + log.timeOut : ''}
+                        </div>
+                        <div>
+                            <span class="log-status ${remarksClass}">${log.remarks}</span>
+                            ${log.status !== 'Pending' ? '<span class="log-status ' + statusBadgeClass + '">' + log.status + '</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== ADMIN - TEACHER LOGS ====================
+        
+        function showTodayTeachers() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('teacherDateFilter').value = today;
+            document.getElementById('teacherFilterType').value = 'all';
+            filterTeacherLogs();
+        }
+
+        function filterTeacherLogs() {
+            const selectedDate = document.getElementById('teacherDateFilter').value;
+            const filterType = document.getElementById('teacherFilterType').value;
+            
+            let filtered = teacherLogs.filter(log => log.date === selectedDate);
+            
+            if (filterType === 'complete') {
+                filtered = filtered.filter(log => log.timeOut);
+            } else if (filterType === 'pending') {
+                filtered = filtered.filter(log => !log.timeOut);
+            }
+            
+            displayTeacherLogs(filtered, selectedDate);
+        }
+
+        function displayTeacherLogs(logs, date) {
+            const container = document.getElementById('teacherLogsDisplay');
+            const allLogsToday = teacherLogs.filter(log => log.date === date);
+            
+            const total = allLogsToday.length;
+            const present = allLogsToday.filter(log => log.timeIn).length;
+            const complete = allLogsToday.filter(log => log.timeOut).length;
+            const pending = present - complete;
+            
+            document.getElementById('teacherTotal').textContent = total;
+            document.getElementById('teacherPresent').textContent = present;
+            document.getElementById('teacherComplete').textContent = complete;
+            document.getElementById('teacherPending').textContent = pending;
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="no-logs">No teacher attendance records match the filter</div>';
+                return;
+            }
+            
+            container.innerHTML = logs.map(log => {
+                const statusClass = log.timeOut ? 'complete' : 'pending';
+                
+                return `
+                    <div class="log-item ${statusClass}">
+                        <div class="log-name">
+                            ${log.name}
+                            <span class="teacher-badge">TEACHER</span>
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin: 5px 0;">
+                            <span>Subject: ${log.subject}</span>
+                        </div>
+                        <div style="font-size: 13px; color: #555; margin-top: 8px;">
+                            ⏰ In: ${log.timeIn} 
+                            ${log.timeOut ? '| 🏃 Out: ' + log.timeOut : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== STUDENT - MY LOGS ====================
+        
+        function showTodayLogs() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('myLogsDateFilter').value = today;
+            filterMyLogs();
+        }
+
+        function showAllLogs() {
+            document.getElementById('myLogsDateFilter').value = '';
+            filterMyLogs();
+        }
+
+        function filterMyLogs() {
+            if (!userLRN) {
+                document.getElementById('myLogsDisplay').innerHTML = '<div class="no-logs">No LRN found</div>';
+                return;
+            }
+
+            const selectedDate = document.getElementById('myLogsDateFilter').value;
+            
+            let myLogs = studentLogs.filter(log => log.lrn === userLRN);
+            
+            if (selectedDate) {
+                myLogs = myLogs.filter(log => log.date === selectedDate);
+            }
+            
+            displayMyLogs(myLogs);
+        }
+
+        function displayMyLogs(logs) {
+            const container = document.getElementById('myLogsDisplay');
+            
+            const allMyLogs = studentLogs.filter(log => log.lrn === userLRN);
+            const totalDays = [...new Set(allMyLogs.map(log => log.date))].length;
+            const onTime = allMyLogs.filter(log => log.remarks === "On Time").length;
+            const complete = allMyLogs.filter(log => log.timeOut).length;
+            
+            document.getElementById('myTotalDays').textContent = totalDays;
+            document.getElementById('myOnTime').textContent = onTime;
+            document.getElementById('myComplete').textContent = complete;
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="no-logs">No attendance records found</div>';
+                return;
+            }
+            
+            logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = logs.map(log => {
+                const statusClass = log.timeOut ? 'complete' : 'pending';
+                const remarksClass = log.remarks === "On Time" ? 'on-time' : 
+                                    log.remarks.includes("Late") ? 'late' : 'half-day';
+                const statusBadgeClass = log.status.includes("Whole Day") ? 'whole-day' : 'half-day';
+                
+                return `
+                    <div class="log-item ${statusClass}">
+                        <div class="log-name">📅 ${formatDate(log.date)}</div>
+                        <div style="font-size: 13px; color: #555; margin-top: 8px;">
+                            ⏰ Time In: ${log.timeIn} 
+                            ${log.timeOut ? '| 🏃 Time Out: ' + log.timeOut : '<span style="color: #FF9800;">(Not Yet)</span>'}
+                        </div>
+                        <div>
+                            <span class="log-status ${remarksClass}">${log.remarks}</span>
+                            ${log.status !== 'Pending' ? '<span class="log-status ' + statusBadgeClass + '">' + log.status + '</span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        // ==================== EXPORT & CLEAR ====================
+        
+        function exportStudentCSV() {
+            const selectedDate = document.getElementById('studentDateFilter').value;
+            const filtered = studentLogs.filter(log => log.date === selectedDate);
+            
+            if (filtered.length === 0) {
+                alert('No data to export for this date');
+                return;
+            }
+            
+            let csv = 'Name,LRN,Date of Birth,Date,Time In,Time Out,Remarks,Status\n';
+            filtered.forEach(log => {
+                csv += `${log.name},${log.lrn},${log.dob},${log.date},${log.timeIn},${log.timeOut || ''},${log.remarks},${log.status}\n`;
+            });
+            
+            downloadCSV(csv, `student_attendance_${selectedDate}.csv`);
+        }
+
+        function exportTeacherCSV() {
+            const selectedDate = document.getElementById('teacherDateFilter').value;
+            const filtered = teacherLogs.filter(log => log.date === selectedDate);
+            
+            if (filtered.length === 0) {
+                alert('No data to export for this date');
+                return;
+            }
+            
+            let csv = 'Name,Subject,Date,Time In,Time Out\n';
+            filtered.forEach(log => {
+                csv += `${log.name},${log.subject},${log.date},${log.timeIn},${log.timeOut || ''}\n`;
+            });
+            
+            downloadCSV(csv, `teacher_attendance_${selectedDate}.csv`);
+        }
+
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function clearStudentLogs() {
+            if (confirm('⚠️ Clear all student attendance records from Firebase? This cannot be undone!')) {
+                database.ref('attendance/students').remove();
+                alert('✅ All student records cleared');
+            }
+        }
+
+        function clearTeacherLogs() {
+            if (confirm('⚠️ Clear all teacher attendance records from Firebase? This cannot be undone!')) {
+                database.ref('attendance/teachers').remove();
+                alert('✅ All teacher records cleared');
+            }
+        }
+
+        // ==================== CUSTOMIZATION ====================
+        
+        function toggleCustomize() {
+            const panel = document.getElementById('customizePanel');
+            panel.classList.toggle('open');
+        }
+
+        function updateColors() {
+            const primary = document.getElementById('primaryColor').value;
+            const secondary = document.getElementById('secondaryColor').value;
+            const success = document.getElementById('successColor').value;
+            const warning = document.getElementById('warningColor').value;
+            
+            document.documentElement.style.setProperty('--primary-color', primary);
+            document.documentElement.style.setProperty('--secondary-color', secondary);
+            document.documentElement.style.setProperty('--success-color', success);
+            document.documentElement.style.setProperty('--warning-color', warning);
+        }
+
+        function updateFonts() {
+            const mainFont = document.getElementById('mainFont').value;
+            const headingFont = document.getElementById('headingFont').value;
+            
+            document.documentElement.style.setProperty('--main-font', mainFont);
+            document.documentElement.style.setProperty('--heading-font', headingFont);
+        }
+
+        function updateBackground() {
+            const bgType = document.getElementById('backgroundType').value;
+            
+            if (bgType === 'image') {
+                document.getElementById('backgroundUpload').style.display = 'block';
+                document.getElementById('patternSelector').style.display = 'none';
+            } else if (bgType === 'pattern') {
+                document.getElementById('backgroundUpload').style.display = 'none';
+                document.getElementById('patternSelector').style.display = 'block';
+                applyPattern();
+            } else {
+                document.getElementById('backgroundUpload').style.display = 'none';
+                document.getElementById('patternSelector').style.display = 'none';
+                
+                if (bgType === 'solid') {
+                    document.body.style.background = document.getElementById('primaryColor').value;
+                    document.body.classList.remove('has-background-image');
+                } else {
+                    const primary = document.getElementById('primaryColor').value;
+                    const secondary = document.getElementById('secondaryColor').value;
+                    document.body.style.background = `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`;
+                    document.body.classList.remove('has-background-image');
+                }
+            }
+        }
+
+        function handleBackgroundUpload() {
+            const file = document.getElementById('backgroundImage').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.body.style.backgroundImage = `url(${e.target.result})`;
+                    document.body.classList.add('has-background-image');
+                    localStorage.setItem('backgroundImage', e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function applyPattern() {
+            const pattern = document.getElementById('patternType').value;
+            const primary = document.getElementById('primaryColor').value;
+            
+            let patternSVG = '';
+            
+            switch(pattern) {
+                case 'dots':
+                    patternSVG = `data:image/svg+xml,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="2" fill="${encodeURIComponent(primary)}"/></svg>`;
+                    break;
+                case 'lines':
+                    patternSVG = `data:image/svg+xml,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><path d="M0 0L40 40M40 0L0 40" stroke="${encodeURIComponent(primary)}" stroke-width="2"/></svg>`;
+                    break;
+                case 'waves':
+                    patternSVG = `data:image/svg+xml,<svg width="100" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M0 10 Q25 0 50 10 T100 10" stroke="${encodeURIComponent(primary)}" fill="none" stroke-width="2"/></svg>`;
+                    break;
+                case 'grid':
+                    patternSVG = `data:image/svg+xml,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><path d="M0 0L0 40M0 0L40 0" stroke="${encodeURIComponent(primary)}" stroke-width="1"/></svg>`;
+                    break;
+                case 'diagonal':
+                    patternSVG = `data:image/svg+xml,<svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><path d="M0 10L10 0" stroke="${encodeURIComponent(primary)}" stroke-width="2"/></svg>`;
+                    break;
+            }
+            
+            const secondary = document.getElementById('secondaryColor').value;
+            document.body.style.background = `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%), url('${patternSVG}')`;
+            document.body.style.backgroundBlendMode = 'overlay';
+            document.body.classList.remove('has-background-image');
+        }
+
+        function updateShapes() {
+            const radius = document.getElementById('shapeStyle').value;
+            document.documentElement.style.setProperty('--button-radius', radius);
+            document.documentElement.style.setProperty('--card-radius', radius === '50px' ? '25px' : radius);
+        }
+
+        function applyTheme(theme) {
+            const themes = {
+                default: { primary: '#667eea', secondary: '#764ba2', success: '#4CAF50', warning: '#FF9800' },
+                sunset: { primary: '#f093fb', secondary: '#f5576c', success: '#4CAF50', warning: '#FF9800' },
+                ocean: { primary: '#4facfe', secondary: '#00f2fe', success: '#06d6a0', warning: '#ffd166' },
+                forest: { primary: '#43e97b', secondary: '#38f9d7', success: '#52b788', warning: '#f9c74f' },
+                candy: { primary: '#fa709a', secondary: '#fee140', success: '#06d6a0', warning: '#ff9f1c' },
+                midnight: { primary: '#30cfd0', secondary: '#330867', success: '#06ffa5', warning: '#ffba08' }
+            };
+            
+            const t = themes[theme];
+            document.getElementById('primaryColor').value = t.primary;
+            document.getElementById('secondaryColor').value = t.secondary;
+            document.getElementById('successColor').value = t.success;
+            document.getElementById('warningColor').value = t.warning;
+            
+            updateColors();
+            updateBackground();
+        }
+
+        function saveCustomTheme() {
+            const theme = {
+                primaryColor: document.getElementById('primaryColor').value,
+                secondaryColor: document.getElementById('secondaryColor').value,
+                successColor: document.getElementById('successColor').value,
+                warningColor: document.getElementById('warningColor').value,
+                mainFont: document.getElementById('mainFont').value,
+                headingFont: document.getElementById('headingFont').value,
+                backgroundType: document.getElementById('backgroundType').value,
+                shapeStyle: document.getElementById('shapeStyle').value,
+                patternType: document.getElementById('patternType')?.value || '',
+                backgroundImage: localStorage.getItem('backgroundImage') || ''
+            };
+            
+            localStorage.setItem('customTheme', JSON.stringify(theme));
+            alert('✅ Theme saved successfully!');
+        }
+
+        function loadCustomTheme() {
+            const savedTheme = localStorage.getItem('customTheme');
+            if (!savedTheme) return;
+            
+            const theme = JSON.parse(savedTheme);
+            
+            document.getElementById('primaryColor').value = theme.primaryColor;
+            document.getElementById('secondaryColor').value = theme.secondaryColor;
+            document.getElementById('successColor').value = theme.successColor;
+            document.getElementById('warningColor').value = theme.warningColor;
+            document.getElementById('mainFont').value = theme.mainFont;
+            document.getElementById('headingFont').value = theme.headingFont;
+            document.getElementById('backgroundType').value = theme.backgroundType;
+            document.getElementById('shapeStyle').value = theme.shapeStyle;
+            
+            updateColors();
+            updateFonts();
+            updateShapes();
+            updateBackground();
+            
+            if (theme.backgroundType === 'pattern' && theme.patternType) {
+                document.getElementById('patternType').value = theme.patternType;
+                applyPattern();
+            }
+            
+            if (theme.backgroundType === 'image' && theme.backgroundImage) {
+                document.body.style.backgroundImage = `url(${theme.backgroundImage})`;
+                document.body.classList.add('has-background-image');
+            }
+        }
+
+        function resetToDefault() {
+            if (confirm('Reset to default theme? This will clear your customizations.')) {
+                localStorage.removeItem('customTheme');
+                localStorage.removeItem('backgroundImage');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRESENCE - Smart Attendance</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Montserrat:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* DEFAULT THEME - EDIT THESE IN CUSTOMIZATION PANEL */
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --text-dark: #333333;
+            --text-light: #666666;
+            
+            /* BACKGROUND - Can be gradient, solid, or image */
+            --body-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            
+            /* FONTS - Choose from 6+ options */
+            --main-font: 'Poppins', sans-serif;
+            --heading-font: 'Montserrat', sans-serif;
+            
+            /* SHAPES */
+            --button-radius: 12px;
+            --card-radius: 20px;
+            
+            /* EFFECTS */
+            --shadow-light: 0 4px 15px rgba(0,0,0,0.1);
+            --shadow-medium: 0 8px 25px rgba(0,0,0,0.15);
+            --shadow-heavy: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--main-font);
+            background: var(--body-background);
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Overlay for background images */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 0;
+            pointer-events: none;
+            display: none;
+        }
+        
+        body.has-background-image::before {
+            display: block;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* CUSTOMIZATION BUTTON */
+        .customize-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: var(--shadow-heavy);
+            z-index: 9999;
+            transition: all 0.3s;
+        }
+        
+        .customize-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+        
+        /* CUSTOMIZATION PANEL */
+        .customize-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            z-index: 10000;
+            overflow-y: auto;
+            transition: right 0.3s;
+            padding: 20px;
+        }
+        
+        .customize-panel.open {
+            right: 0;
+        }
+        
+        .customize-panel h2 {
+            font-family: var(--heading-font);
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-customize {
+            cursor: pointer;
+            font-size: 28px;
+            color: var(--danger-color);
+        }
+        
+        .customize-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .customize-section h3 {
+            color: var(--text-dark);
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .color-picker-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .color-picker-item label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        
+        .color-picker-item input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .font-selector, .background-type, .shape-selector {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: var(--main-font);
+            margin-bottom: 10px;
+        }
+        
+        .background-upload {
+            margin-top: 10px;
+        }
+        
+        .background-upload input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .preset-themes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .theme-preset {
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .theme-preset:hover {
+            transform: scale(1.05);
+            border-color: white;
+        }
+        
+        .save-theme-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--success-color), #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 20px;
+        }
+        
+        /* STATUS INDICATORS */
+        .firebase-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 9999;
+            box-shadow: var(--shadow-light);
+        }
+        
+        .firebase-status.connected { color: var(--success-color); }
+        .firebase-status.disconnected { color: var(--danger-color); }
+        
+        .user-badge {
+            position: fixed;
+            top: 10px;
+            right: 80px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 9999;
+            box-shadow: var(--shadow-light);
+        }
+        
+        .user-badge.admin { color: var(--danger-color); }
+        .user-badge.student { color: var(--info-color); }
+        
+        /* MAIN CARD */
+        .main-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: var(--card-radius);
+            box-shadow: var(--shadow-heavy);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            opacity: 0.3;
+        }
+        
+        .header h1 {
+            font-family: var(--heading-font);
+            color: white;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header p {
+            color: rgba(255,255,255,0.9);
+            margin-top: 10px;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cloud-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* TAB NAVIGATION */
+        .tab-navigation {
+            background: white;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: var(--button-radius);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            background: #f0f0f0;
+            color: #999;
+            transition: all 0.3s;
+            font-family: var(--main-font);
+        }
+        
+        .tab-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            box-shadow: var(--shadow-medium);
+        }
+        
+        /* MODE TOGGLE */
+        .mode-toggle {
+            background: white;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: var(--button-radius);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            font-family: var(--main-font);
+        }
+        
+        .mode-btn:not(.active) { 
+            background: #f0f0f0; 
+            color: #999; 
+        }
+        
+        .mode-btn.time-in.active { 
+            background: linear-gradient(135deg, var(--success-color), #45a049); 
+            color: white;
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .mode-btn.time-out.active { 
+            background: linear-gradient(135deg, var(--warning-color), #ff8c00); 
+            color: white;
+            box-shadow: var(--shadow-medium);
+        }
+        
+        /* SCANNER */
+        .scanner-container { 
+            background: white; 
+            padding: 20px; 
+        }
+        
+        #reader, #initialReader {
+            border-radius: var(--button-radius);
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 3px solid var(--primary-color);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .status-display {
+            padding: 15px;
+            border-radius: var(--button-radius);
+            margin-bottom: 15px;
+            min-height: 80px;
+            transition: all 0.3s;
+        }
+        
+        .status-display.success { background: linear-gradient(135deg, #d4edda, #c3e6cb); border-left: 5px solid var(--success-color); }
+        .status-display.error { background: linear-gradient(135deg, #f8d7da, #f5c6cb); border-left: 5px solid var(--danger-color); }
+        .status-display.info { background: linear-gradient(135deg, #d1ecf1, #bee5eb); border-left: 5px solid var(--info-color); }
+        .status-display.warning { background: linear-gradient(135deg, #fff3cd, #ffeaa7); border-left: 5px solid var(--warning-color); }
+        
+        .status-display h3 {
+            font-family: var(--heading-font);
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        /* LOGS */
+        .logs-section {
+            background: white;
+            padding: 20px;
+        }
+        
+        .date-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .date-selector input, .date-selector select {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--button-radius);
+            font-size: 14px;
+            min-width: 140px;
+            font-family: var(--main-font);
+        }
+        
+        .date-selector button {
+            padding: 12px 18px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: var(--button-radius);
+            cursor: pointer;
+            font-weight: 700;
+            font-family: var(--main-font);
+            transition: all 0.3s;
+        }
+        
+        .date-selector button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 15px;
+            border-radius: var(--button-radius);
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary-color);
+            font-family: var(--heading-font);
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        
+        .log-item {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            padding: 15px;
+            border-radius: var(--button-radius);
+            margin-bottom: 10px;
+            border-left: 5px solid var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-light);
+        }
+        
+        .log-item:hover {
+            transform: translateX(10px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .log-item.complete { border-left-color: var(--success-color); }
+        .log-item.pending { border-left-color: var(--warning-color); }
+        
+        .log-name {
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            font-family: var(--heading-font);
+        }
+        
+        .log-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+        
+        .log-status.on-time { background: var(--success-color); color: white; }
+        .log-status.late { background: var(--warning-color); color: white; }
+        .log-status.half-day { background: var(--info-color); color: white; }
+        .log-status.whole-day { background: var(--success-color); color: white; }
+        
+        .teacher-badge {
+            background: var(--warning-color);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            padding: 12px;
+            border: none;
+            border-radius: var(--button-radius);
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            font-family: var(--main-font);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .export-btn { background: linear-gradient(135deg, var(--info-color), #138496); color: white; }
+        .clear-btn { background: linear-gradient(135deg, var(--danger-color), #c82333); color: white; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .hidden { display: none !important; }
+        .no-logs { text-align: center; padding: 40px 20px; color: #999; }
+        
+        /* SETUP SCREEN */
+        .setup-screen {
+            background: rgba(255,255,255,0.95);
+            border-radius: var(--card-radius);
+            padding: 30px;
+            box-shadow: var(--shadow-heavy);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .setup-screen h1 {
+            font-family: var(--heading-font);
+            color: var(--primary-color);
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .setup-screen input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--button-radius);
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-family: var(--main-font);
+        }
+        
+        .setup-screen button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: var(--button-radius);
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: var(--main-font);
+        }
+        
+        /* INITIAL SCAN SCREEN */
+        .initial-scan-screen {
+            background: rgba(255,255,255,0.95);
+            border-radius: var(--card-radius);
+            padding: 30px;
+            box-shadow: var(--shadow-heavy);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .initial-scan-screen h1 {
+            font-family: var(--heading-font);
+            color: var(--primary-color);
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 480px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .customize-panel { width: 100%; right: -100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- STATUS INDICATORS -->
+    <div class="firebase-status" id="firebaseStatus">🔴 Connecting...</div>
+    <div class="user-badge hidden" id="userBadge"></div>
+    
+    <!-- CUSTOMIZATION BUTTON -->
+    <button class="customize-btn" onclick="toggleCustomize()" title="Customize App">🎨</button>
+    
+    <!-- CUSTOMIZATION PANEL -->
+    <div class="customize-panel" id="customizePanel">
+        <h2>
+            🎨 Customize PRESENCE
+            <span class="close-customize" onclick="toggleCustomize()">&times;</span>
+        </h2>
+        
+        <!-- PRESET THEMES -->
+        <div class="customize-section">
+            <h3>Quick Themes</h3>
+            <div class="preset-themes">
+                <div class="theme-preset" style="background: linear-gradient(135deg, #667eea, #764ba2);" onclick="applyTheme('default')">
+                    <div style="color: white;">Default</div>
+                </div>
+                <div class="theme-preset" style="background: linear-gradient(135deg, #f093fb, #f5576c);" onclick="applyTheme('sunset')">
+                    <div style="color: white;">Sunset</div>
+                </div>
+                <div class="theme-preset" style="background: linear-gradient(135deg, #4facfe, #00f2fe);" onclick="applyTheme('ocean')">
+                    <div style="color: white;">Ocean</div>
+                </div>
+                <div class="theme-preset" style="background: linear-gradient(135deg, #43e97b, #38f9d7);" onclick="applyTheme('forest')">
+                    <div style="color: white;">Forest</div>
+                </div>
+                <div class="theme-preset" style="background: linear-gradient(135deg, #fa709a, #fee140);" onclick="applyTheme('candy')">
+                    <div style="color: white;">Candy</div>
+                </div>
+                <div class="theme-preset" style="background: linear-gradient(135deg, #30cfd0, #330867);" onclick="applyTheme('midnight')">
+                    <div style="color: white;">Midnight</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- COLOR CUSTOMIZATION -->
+        <div class="customize-section">
+            <h3>Colors</h3>
+            <div class="color-picker-group">
+                <div class="color-picker-item">
+                    <label>Primary</label>
+                    <input type="color" id="primaryColor" value="#667eea" onchange="updateColors()">
+                </div>
+                <div class="color-picker-item">
+                    <label>Secondary</label>
+                    <input type="color" id="secondaryColor" value="#764ba2" onchange="updateColors()">
+                </div>
+                <div class="color-picker-item">
+                    <label>Success</label>
+                    <input type="color" id="successColor" value="#4CAF50" onchange="updateColors()">
+                </div>
+                <div class="color-picker-item">
+                    <label>Warning</label>
+                    <input type="color" id="warningColor" value="#FF9800" onchange="updateColors()">
+                </div>
+            </div>
+        </div>
+        
+        <!-- FONT SELECTION -->
+        <div class="customize-section">
+            <h3>Fonts</h3>
+            <label style="font-size: 12px; color: #666;">Main Font:</label>
+            <select class="font-selector" id="mainFont" onchange="updateFonts()">
+                <option value="'Poppins', sans-serif">Poppins (Modern)</option>
+                <option value="'Roboto', sans-serif">Roboto (Clean)</option>
+                <option value="'Montserrat', sans-serif">Montserrat (Bold)</option>
+                <option value="'Inter', sans-serif">Inter (Professional)</option>
+                <option value="'Playfair Display', serif">Playfair (Elegant)</option>
+                <option value="'Orbitron', sans-serif">Orbitron (Futuristic)</option>
+            </select>
+            
+            <label style="font-size: 12px; color: #666; margin-top: 10px; display: block;">Heading Font:</label>
+            <select class="font-selector" id="headingFont" onchange="updateFonts()">
+                <option value="'Montserrat', sans-serif">Montserrat (Bold)</option>
+                <option value="'Poppins', sans-serif">Poppins (Modern)</option>
+                <option value="'Playfair Display', serif">Playfair (Elegant)</option>
+                <option value="'Orbitron', sans-serif">Orbitron (Futuristic)</option>
+                <option value="'Roboto', sans-serif">Roboto (Clean)</option>
+            </select>
+        </div>
+        
+        <!-- BACKGROUND CUSTOMIZATION -->
+        <div class="customize-section">
+            <h3>Background</h3>
+            <label style="font-size: 12px; color: #666;">Background Type:</label>
+            <select class="background-type" id="backgroundType" onchange="updateBackground()">
+                <option value="gradient">Gradient</option>
+                <option value="solid">Solid Color</option>
+                <option value="image">Upload Image</option>
+                <option value="pattern">Pattern</option>
+            </select>
+            
+            <div class="background-upload" id="backgroundUpload" style="display: none;">
+                <input type="file" id="backgroundImage" accept="image/*" onchange="handleBackgroundUpload()">
+            </div>
+            
+            <div id="patternSelector" style="display: none; margin-top: 10px;">
+                <label style="font-size: 12px; color: #666;">Choose Pattern:</label>
+                <select class="background-type" id="patternType" onchange="applyPattern()">
+                    <option value="dots">Dots</option>
+                    <option value="lines">Lines</option>
+                    <option value="waves">Waves</option>
+                    <option value="grid">Grid</option>
+                    <option value="diagonal">Diagonal Stripes</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- SHAPE CUSTOMIZATION -->
+        <div class="customize-section">
+            <h3>Button & Card Shapes</h3>
+            <label style="font-size: 12px; color: #666;">Border Radius:</label>
+            <select class="shape-selector" id="shapeStyle" onchange="updateShapes()">
+                <option value="0px">Square (Sharp)</option>
+                <option value="8px">Slightly Rounded</option>
+                <option value="12px" selected>Rounded (Default)</option>
+                <option value="20px">Very Rounded</option>
+                <option value="50px">Pill Shape</option>
+            </select>
+        </div>
+        
+        <button class="save-theme-btn" onclick="saveCustomTheme()">💾 Save Custom Theme</button>
+        <button class="save-theme-btn" style="background: linear-gradient(135deg, #6c757d, #5a6268); margin-top: 10px;" onclick="resetToDefault()">
+            ↺ Reset to Default
+        </button>
+    </div>
+
+    <div class="container">
+        <!-- FIREBASE SETUP SCREEN -->
